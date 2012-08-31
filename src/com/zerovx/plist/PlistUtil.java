@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 public class PlistUtil {
 	public static Map<String, Object> plistToMap(String path) {
@@ -19,10 +20,8 @@ public class PlistUtil {
 		try {
 			ret = plistToMap(file);
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return ret;
@@ -47,7 +46,7 @@ public class PlistUtil {
 			throw new RuntimeException(tag);
 	}
 
-	// Data, Date and String all use String. I'm using starts with here in case tags ever have attributes. They shouldn't.
+	// Data, Date and String all use String. I'm using startsWith here in case tags ever have attributes. They shouldn't.
 	private static Object parseValue(PushbackReader reader) throws IOException {
 		String tag = nextTag(reader);
 		if (tag.startsWith("dict"))
@@ -152,11 +151,25 @@ public class PlistUtil {
 		return (char) r;
 	}
 
+	@SuppressWarnings("unchecked")
 	public static void main(String[] args) {
+		Map<String, Object> ret = null;
 		if (args.length == 0)
-			plistToMap("C:\\itml.xml");
+			ret = plistToMap("C:\\itml.xml");
 		else
-			plistToMap(args[1]);
-	}
+			ret = plistToMap(args[1]);
 
+		Map<String, Long> albumRatings = new HashMap<String, Long>();
+		Map<String, Object> lib = (Map<String, Object>) ret.get("plist");
+		Map<String, Object> tracks = (Map<String, Object>) lib.get("Tracks");
+		for (Object t : tracks.values()) {
+			Map<String, Object> track = (Map<String, Object>) t;
+			if (track.containsKey("Album Rating") && ((Long) track.get("Album Rating") > 71))
+				albumRatings.put(track.get("Artist") + (track.containsKey("Album") ? (" - " + track.get("Album")) : ""), (Long) track.get("Album Rating"));
+		}
+
+		for (Entry<String, Long> s : albumRatings.entrySet()) {
+			System.out.println(s.getKey() + " : " + (s.getValue() / 10) + "/10");
+		}
+	}
 }
